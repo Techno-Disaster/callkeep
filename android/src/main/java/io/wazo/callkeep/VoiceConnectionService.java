@@ -56,6 +56,7 @@ import java.util.UUID;
 import io.wazo.callkeep.utils.ConstraintsMap;
 import static io.wazo.callkeep.Constants.*;
 import static io.wazo.callkeep.Constants.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+import static io.wazo.callkeep.Constants.ACTION_DISPLAY_INCOMING;
 
 // @see https://github.com/kbagchiGWC/voice-quickstart-android/blob/9a2aff7fbe0d0a5ae9457b48e9ad408740dfb968/exampleConnectionService/src/main/java/com/twilio/voice/examples/connectionservice/VoiceConnectionService.java
 @TargetApi(Build.VERSION_CODES.M)
@@ -133,7 +134,11 @@ public class VoiceConnectionService extends ConnectionService {
         incomingCallConnection.setInitialized();
 
         startForegroundService();
-
+        Bundle extras = request.getExtras();
+        HashMap<String, String> extrasMap = this.bundleToMap(extras);
+        extrasMap.put(Constants.EXTRA_CALLER_HANDLE, number.toString());
+        extrasMap.put(Constants.EXTRA_CALL_FROM_PUSHKIT, "false");
+        sendCallRequestToActivity(ACTION_DISPLAY_INCOMING, extrasMap);
         return incomingCallConnection;
     }
 

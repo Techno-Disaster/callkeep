@@ -111,7 +111,7 @@ public class CallKeepModule {
             }
             break;
             case "displayIncomingCall": {
-                displayIncomingCall((String)call.argument("uuid"), (String)call.argument("handle"), (String)call.argument("localizedCallerName"));
+                displayIncomingCall((String)call.argument("uuid"), (String)call.argument("handle"), (String)call.argument("localizedCallerName"), call.argument("handleType"), call.argument("hasVideo"), call.argument("payload"));
                 result.success(null);
             }
             break;
@@ -254,12 +254,8 @@ public class CallKeepModule {
     }
 
     
-    public void displayIncomingCall(String uuid, String number, String callerName) {
-        if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
-            return;
-        }
-
-        Log.d(TAG, "displayIncomingCall number: " + number + ", callerName: " + callerName);
+    public void displayIncomingCall(String uuid, String number, String callerName, String handleType, Boolean hasVideo, String payload) {
+        Log.i(TAG, "displayIncomingCall number: " + number + ", callerName: " + callerName);
 
         Bundle extras = new Bundle();
         Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, number, null);
@@ -267,7 +263,9 @@ public class CallKeepModule {
         extras.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_ADDRESS, uri);
         extras.putString(EXTRA_CALLER_NAME, callerName);
         extras.putString(EXTRA_CALL_UUID, uuid);
-
+        extras.putString(EXTRA_CALL_HANDLE_TYPE, handleType);
+        extras.putString(EXTRA_CALL_HAS_VIDEO, hasVideo.toString());
+        extras.putString(EXTRA_CALL_PAYLOAD, payload);
         telecomManager.addNewIncomingCall(handle, extras);
     }
 
@@ -571,7 +569,6 @@ public class CallKeepModule {
             } else {
                 context.startActivity(focusIntent);
             }
-        }
         result.success(isOpened);
     }
 
@@ -594,7 +591,6 @@ public class CallKeepModule {
 
         PhoneAccount.Builder builder = new PhoneAccount.Builder(handle, appName)
                 .setCapabilities(PhoneAccount.CAPABILITY_CALL_PROVIDER);
-
         if (_settings != null && _settings.hasKey("imageName")) {
             int identifier = appContext.getResources().getIdentifier(_settings.getString("imageName"), "drawable", appContext.getPackageName());
             Icon icon = Icon.createWithResource(appContext, identifier);
@@ -639,6 +635,7 @@ public class CallKeepModule {
     private void registerReceiver() {
         if (!isReceiverRegistered) {
             IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction(ACTION_DISPLAY_INCOMING);
             intentFilter.addAction(ACTION_END_CALL);
             intentFilter.addAction(ACTION_ANSWER_CALL);
             intentFilter.addAction(ACTION_MUTE_CALL);
@@ -706,6 +703,15 @@ public class CallKeepModule {
             HashMap<String, String> attributeMap = (HashMap<String, String>)intent.getSerializableExtra("attributeMap");
 
             switch (intent.getAction()) {
+                case ACTION_DISPLAY_INCOMING:
+                    args.putString("callUUID", attributeMap.get(EXTRA_CALL_UUID));
+                    args.putString("handle", attributeMap.get(EXTRA_CALLER_HANDLE));
+                    args.putString("localizedCallerName", attributeMap.get(EXTRA_CALLER_NAME));
+                    args.putString("hasVideo", attributeMap.get(EXTRA_CALL_HAS_VIDEO));
+                    args.putString("fromPushKit", attributeMap.get(EXTRA_CALL_FROM_PUSHKIT));
+                    args.putString("payload", attributeMap.get(EXTRA_CALL_PAYLOAD));
+                    sendEventToFlutter("CallKeepDidDisplayIncomingCall", args);
+                    break;
                 case ACTION_END_CALL:
                     args.putString("callUUID", attributeMap.get(EXTRA_CALL_UUID));
                     sendEventToFlutter("CallKeepPerformEndCallAction", args);
