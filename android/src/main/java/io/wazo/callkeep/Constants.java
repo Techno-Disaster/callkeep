@@ -22,4 +22,5 @@ public class Constants {
     public static final String EXTRA_CALL_FROM_PUSHKIT = "EXTRA_CALL_FROM_PUSHKIT";
     public static final String EXTRA_CALL_PAYLOAD = "EXTRA_CALL_PAYLOAD";
     public static final int FOREGROUND_SERVICE_TYPE_MICROPHONE = 128;
+    public static final String EXTRA_HAS_VIDEO = "EXTRA_HAS_VIDEO";
 }

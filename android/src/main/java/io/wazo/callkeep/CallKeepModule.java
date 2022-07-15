@@ -35,6 +35,7 @@ import android.telecom.CallAudioState;
 import android.telecom.Connection;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
+import android.telecom.VideoProfile;
 import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -74,7 +75,7 @@ public class CallKeepModule {
     private static final String E_ACTIVITY_DOES_NOT_EXIST = "E_ACTIVITY_DOES_NOT_EXIST";
     private static final String REACT_NATIVE_MODULE_NAME = "CallKeep";
     private static final String[] permissions = { Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.CALL_PHONE, Manifest.permission.RECORD_AUDIO , Manifest.permission.READ_PHONE_NUMBERS };
+            Manifest.permission.CALL_PHONE, Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_PHONE_NUMBERS };
 
     private static final String TAG = "FLT:CallKeepModule";
     private static TelecomManager telecomManager;
@@ -96,130 +97,136 @@ public class CallKeepModule {
         this._currentActivity = activity;
     }
 
-    public void dispose(){
-        if (voiceBroadcastReceiver == null || this._context == null) return;
+    public void dispose() {
+        if (voiceBroadcastReceiver == null || this._context == null)
+            return;
         LocalBroadcastManager.getInstance(this._context).unregisterReceiver(voiceBroadcastReceiver);
         VoiceConnectionService.setPhoneAccountHandle(null);
         isReceiverRegistered = false;
     }
 
     public boolean handleMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-        switch(call.method) {
+        switch (call.method) {
             case "setup": {
-                setup(new ConstraintsMap((Map<String, Object>)call.argument("options")));
+                setup(new ConstraintsMap((Map<String, Object>) call.argument("options")));
                 result.success(null);
             }
-            break;
+                break;
             case "displayIncomingCall": {
-                displayIncomingCall((String)call.argument("uuid"), (String)call.argument("handle"), (String)call.argument("localizedCallerName"), call.argument("handleType"), call.argument("hasVideo"), call.argument("payload"));
+                displayIncomingCall((String) call.argument("uuid"), (String) call.argument("handle"),
+                        (String) call.argument("localizedCallerName"), call.argument("handleType"),
+                        call.argument("hasVideo"), call.argument("payload"));
                 result.success(null);
             }
-            break;
+                break;
             case "answerIncomingCall": {
-                answerIncomingCall((String)call.argument("uuid"));
+                answerIncomingCall((String) call.argument("uuid"));
                 result.success(null);
             }
-            break;
+                break;
             case "startCall": {
-                startCall((String)call.argument("uuid"), (String)call.argument("number"), (String)call.argument("callerName"));
+                startCall((String) call.argument("uuid"), (String) call.argument("number"),
+                        (String) call.argument("callerName"));
                 result.success(null);
             }
-            break;
+                break;
             case "endCall": {
-                endCall((String)call.argument("uuid"));
+                endCall((String) call.argument("uuid"));
                 result.success(null);
             }
-            break;
+                break;
             case "endAllCalls": {
                 endAllCalls();
                 result.success(null);
             }
-            break;
+                break;
             case "checkPhoneAccountPermission": {
-                checkPhoneAccountPermission(new ConstraintsArray((ArrayList<Object>)call.argument("optionalPermissions")), result);
+                checkPhoneAccountPermission(
+                        new ConstraintsArray((ArrayList<Object>) call.argument("optionalPermissions")), result);
             }
-            break;
+                break;
             case "checkDefaultPhoneAccount": {
                 checkDefaultPhoneAccount(result);
             }
-            break;
+                break;
             case "setOnHold": {
-                setOnHold((String)call.argument("uuid"), (Boolean) call.argument("hold"));
+                setOnHold((String) call.argument("uuid"), (Boolean) call.argument("hold"));
                 result.success(null);
             }
-            break;
+                break;
             case "reportEndCallWithUUID": {
-                reportEndCallWithUUID((String)call.argument("uuid"), (int)call.argument("reason"));
+                reportEndCallWithUUID((String) call.argument("uuid"), (int) call.argument("reason"));
                 result.success(null);
             }
-            break;
+                break;
             case "rejectCall": {
-                rejectCall((String)call.argument("uuid"));
+                rejectCall((String) call.argument("uuid"));
                 result.success(null);
             }
-            break;
+                break;
             case "setMutedCall": {
-                setMutedCall((String)call.argument("uuid"), (Boolean)call.argument("muted"));
+                setMutedCall((String) call.argument("uuid"), (Boolean) call.argument("muted"));
                 result.success(null);
             }
-            break;
+                break;
             case "sendDTMF": {
-                sendDTMF((String)call.argument("uuid"), (String)call.argument("key"));
+                sendDTMF((String) call.argument("uuid"), (String) call.argument("key"));
                 result.success(null);
             }
-            break;
+                break;
             case "updateDisplay": {
-                updateDisplay((String)call.argument("uuid"), (String)call.argument("displayName"), (String)call.argument("handle"));
+                updateDisplay((String) call.argument("uuid"), (String) call.argument("displayName"),
+                        (String) call.argument("handle"));
                 result.success(null);
             }
-            break;
+                break;
             case "hasPhoneAccount": {
                 hasPhoneAccount(result);
             }
-            break;
+                break;
             case "hasOutgoingCall": {
                 hasOutgoingCall(result);
             }
-            break;
+                break;
             case "hasPermissions": {
                 hasPermissions(result);
             }
-            break;
+                break;
             case "setAvailable": {
                 setAvailable((Boolean) call.argument("available"));
                 result.success(null);
             }
-            break;
+                break;
             case "setReachable": {
                 setReachable();
                 result.success(null);
             }
-            break;
+                break;
             case "setCurrentCallActive": {
-                setCurrentCallActive((String)call.argument("uuid"));
+                setCurrentCallActive((String) call.argument("uuid"));
                 result.success(null);
             }
-            break;
+                break;
             case "openPhoneAccounts": {
                 openPhoneAccounts(result);
             }
-            break;
+                break;
             case "backToForeground": {
                 backToForeground(result);
             }
-            break;
+                break;
             case "foregroundService": {
-                VoiceConnectionService.setSettings(new ConstraintsMap((Map<String, Object>)call.argument("settings")));
+                VoiceConnectionService.setSettings(new ConstraintsMap((Map<String, Object>) call.argument("settings")));
                 result.success(null);
             }
-            break;
+                break;
             default:
                 return false;
         }
 
         return true;
     }
-    
+
     public void setup(ConstraintsMap options) {
         if (isReceiverRegistered) {
             return;
@@ -234,7 +241,7 @@ public class CallKeepModule {
 
         VoiceConnectionService.setSettings(options);
     }
-    
+
     public void registerPhoneAccount() {
         if (!isConnectionServiceAvailable()) {
             return;
@@ -243,7 +250,6 @@ public class CallKeepModule {
         this.registerPhoneAccount(this.getAppContext());
     }
 
-    
     public void registerEvents() {
         if (!isConnectionServiceAvailable()) {
             return;
@@ -253,8 +259,8 @@ public class CallKeepModule {
         VoiceConnectionService.setPhoneAccountHandle(handle);
     }
 
-    
-    public void displayIncomingCall(String uuid, String number, String callerName, String handleType, Boolean hasVideo, String payload) {
+    public void displayIncomingCall(String uuid, String number, String callerName, String handleType, Boolean hasVideo,
+            String payload) {
         Log.i(TAG, "displayIncomingCall number: " + number + ", callerName: " + callerName);
 
         Bundle extras = new Bundle();
@@ -266,10 +272,12 @@ public class CallKeepModule {
         extras.putString(EXTRA_CALL_HANDLE_TYPE, handleType);
         extras.putString(EXTRA_CALL_HAS_VIDEO, hasVideo.toString());
         extras.putString(EXTRA_CALL_PAYLOAD, payload);
+        if (hasVideo) {
+            extras.putInt(TelecomManager.EXTRA_INCOMING_VIDEO_STATE, VideoProfile.STATE_BIDIRECTIONAL);
+        }
         telecomManager.addNewIncomingCall(handle, extras);
     }
 
-    
     public void answerIncomingCall(String uuid) {
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             return;
@@ -283,7 +291,6 @@ public class CallKeepModule {
         conn.onAnswer();
     }
 
-    
     public void startCall(String uuid, String number, String callerName) {
         if (!isConnectionServiceAvailable() || !hasPhoneAccount() || !hasPermissions() || number == null) {
             return;
@@ -300,12 +307,12 @@ public class CallKeepModule {
         callExtras.putString(EXTRA_CALL_NUMBER, number);
 
         extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, handle);
+        extras.putInt(TelecomManager.EXTRA_START_CALL_WITH_VIDEO_STATE, VideoProfile.STATE_BIDIRECTIONAL);
         extras.putParcelable(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, callExtras);
 
         telecomManager.placeCall(uri, extras);
     }
 
-    
     public void endCall(String uuid) {
         Log.d(TAG, "endCall called");
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
@@ -321,7 +328,6 @@ public class CallKeepModule {
         Log.d(TAG, "endCall executed");
     }
 
-    
     public void endAllCalls() {
         Log.d(TAG, "endAllCalls called");
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
@@ -337,10 +343,11 @@ public class CallKeepModule {
         Log.d(TAG, "endAllCalls executed");
     }
 
-    
-    public void checkPhoneAccountPermission(ConstraintsArray optionalPermissions, @NonNull MethodChannel.Result result) {
+    public void checkPhoneAccountPermission(ConstraintsArray optionalPermissions,
+            @NonNull MethodChannel.Result result) {
         if (!isConnectionServiceAvailable()) {
-            result.error(E_ACTIVITY_DOES_NOT_EXIST, "ConnectionService not available for this version of Android.", null);
+            result.error(E_ACTIVITY_DOES_NOT_EXIST, "ConnectionService not available for this version of Android.",
+                    null);
             return;
         }
         if (_currentActivity == null) {
@@ -356,7 +363,8 @@ public class CallKeepModule {
         System.arraycopy(optionalPermsArr, 0, allPermissions, permissions.length, optionalPermsArr.length);
 
         if (!this.hasPermissions()) {
-            //requestPermissions(_currentActivity, allPermissions, REQUEST_READ_PHONE_STATE);
+            // requestPermissions(_currentActivity, allPermissions,
+            // REQUEST_READ_PHONE_STATE);
             ArrayList<String> list = new ArrayList<String>();
             Collections.addAll(list, allPermissions);
             requestPermissions(
@@ -374,13 +382,12 @@ public class CallKeepModule {
                             result.success(false);
                         }
                     });
-             return;
+            return;
         }
 
         result.success(!hasPhoneAccount());
     }
 
-    
     public void checkDefaultPhoneAccount(@NonNull MethodChannel.Result result) {
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             result.success(true);
@@ -398,7 +405,6 @@ public class CallKeepModule {
         result.success(!hasSim || hasDefaultAccount);
     }
 
-    
     public void setOnHold(String uuid, boolean shouldHold) {
         Connection conn = VoiceConnectionService.getConnection(uuid);
         if (conn == null) {
@@ -412,7 +418,6 @@ public class CallKeepModule {
         }
     }
 
-    
     public void reportEndCallWithUUID(String uuid, int reason) {
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             return;
@@ -425,7 +430,6 @@ public class CallKeepModule {
         conn.reportDisconnect(reason);
     }
 
-    
     public void rejectCall(String uuid) {
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             return;
@@ -439,7 +443,6 @@ public class CallKeepModule {
         conn.onReject();
     }
 
-    
     public void setMutedCall(String uuid, boolean shouldMute) {
         Connection conn = VoiceConnectionService.getConnection(uuid);
         if (conn == null) {
@@ -447,7 +450,7 @@ public class CallKeepModule {
         }
 
         CallAudioState newAudioState = null;
-        //if the requester wants to mute, do that. otherwise unmute
+        // if the requester wants to mute, do that. otherwise unmute
         if (shouldMute) {
             newAudioState = new CallAudioState(true, conn.getCallAudioState().getRoute(),
                     conn.getCallAudioState().getSupportedRouteMask());
@@ -458,7 +461,6 @@ public class CallKeepModule {
         conn.onCallAudioStateChanged(newAudioState);
     }
 
-    
     public void sendDTMF(String uuid, String key) {
         Connection conn = VoiceConnectionService.getConnection(uuid);
         if (conn == null) {
@@ -468,7 +470,6 @@ public class CallKeepModule {
         conn.onPlayDtmfTone(dtmf);
     }
 
-    
     public void updateDisplay(String uuid, String displayName, String uri) {
         Connection conn = VoiceConnectionService.getConnection(uuid);
         if (conn == null) {
@@ -479,7 +480,6 @@ public class CallKeepModule {
         conn.setCallerDisplayName(displayName, TelecomManager.PRESENTATION_ALLOWED);
     }
 
-    
     public void hasPhoneAccount(@NonNull MethodChannel.Result result) {
         if (telecomManager == null) {
             this.initializeTelecomManager();
@@ -488,27 +488,22 @@ public class CallKeepModule {
         result.success(hasPhoneAccount());
     }
 
-    
     public void hasOutgoingCall(@NonNull MethodChannel.Result result) {
         result.success(VoiceConnectionService.hasOutgoingCall);
     }
 
-    
     public void hasPermissions(@NonNull MethodChannel.Result result) {
         result.success(this.hasPermissions());
     }
 
-    
     public void setAvailable(Boolean active) {
         VoiceConnectionService.setAvailable(active);
     }
 
-    
     public void setReachable() {
         VoiceConnectionService.setReachable();
     }
 
-    
     public void setCurrentCallActive(String uuid) {
         Connection conn = VoiceConnectionService.getConnection(uuid);
         if (conn == null) {
@@ -519,7 +514,6 @@ public class CallKeepModule {
         conn.setActive();
     }
 
-    
     public void openPhoneAccounts(@NonNull MethodChannel.Result result) {
         if (!isConnectionServiceAvailable()) {
             result.error("ConnectionServiceNotAvailable", null, null);
@@ -530,7 +524,7 @@ public class CallKeepModule {
             Intent intent = new Intent();
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
             intent.setComponent(new ComponentName("com.android.server.telecom",
-                     "com.android.server.telecom.settings.EnableAccountPreferenceActivity"));
+                    "com.android.server.telecom.settings.EnableAccountPreferenceActivity"));
             this._currentActivity.startActivity(intent);
             result.success(null);
             return;
@@ -541,13 +535,12 @@ public class CallKeepModule {
         this._currentActivity.startActivity(intent);
         result.success(null);
     }
-    
+
     public static Boolean isConnectionServiceAvailable() {
         // PhoneAccount is available since api level 23
         return Build.VERSION.SDK_INT >= 23;
     }
 
-    
     @SuppressLint("WrongConstant")
     public void backToForeground(@NonNull MethodChannel.Result result) {
         Context context = getAppContext();
@@ -569,7 +562,8 @@ public class CallKeepModule {
             } else {
                 context.startActivity(focusIntent);
             }
-        result.success(isOpened);
+            result.success(isOpened);
+        }
     }
 
     private void initializeTelecomManager() {
@@ -590,9 +584,10 @@ public class CallKeepModule {
         String appName = this.getApplicationName(this.getAppContext());
 
         PhoneAccount.Builder builder = new PhoneAccount.Builder(handle, appName)
-                .setCapabilities(PhoneAccount.CAPABILITY_CALL_PROVIDER);
+                .setCapabilities(PhoneAccount.CAPABILITY_CALL_PROVIDER | PhoneAccount.CAPABILITY_VIDEO_CALLING);
         if (_settings != null && _settings.hasKey("imageName")) {
-            int identifier = appContext.getResources().getIdentifier(_settings.getString("imageName"), "drawable", appContext.getPackageName());
+            int identifier = appContext.getResources().getIdentifier(_settings.getString("imageName"), "drawable",
+                    appContext.getPackageName());
             Icon icon = Icon.createWithResource(appContext, identifier);
             builder.setIcon(icon);
         }
@@ -629,7 +624,7 @@ public class CallKeepModule {
 
     private static boolean hasPhoneAccount() {
         return isConnectionServiceAvailable() && telecomManager != null
-            && telecomManager.getPhoneAccount(handle) != null && telecomManager.getPhoneAccount(handle).isEnabled();
+                && telecomManager.getPhoneAccount(handle) != null && telecomManager.getPhoneAccount(handle).isEnabled();
     }
 
     private void registerReceiver() {
@@ -655,39 +650,38 @@ public class CallKeepModule {
         return this._context.getApplicationContext();
     }
 
-
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void requestPermissions(
             final ArrayList<String> permissions,
             final Callback successCallback,
             final Callback errorCallback) {
         PermissionUtils.Callback callback = (permissions_, grantResults) -> {
-                    List<String> grantedPermissions = new ArrayList<>();
-                    List<String> deniedPermissions = new ArrayList<>();
+            List<String> grantedPermissions = new ArrayList<>();
+            List<String> deniedPermissions = new ArrayList<>();
 
-                    for (int i = 0; i < permissions_.length; ++i) {
-                        String permission = permissions_[i];
-                        int grantResult = grantResults[i];
+            for (int i = 0; i < permissions_.length; ++i) {
+                String permission = permissions_[i];
+                int grantResult = grantResults[i];
 
-                        if (grantResult == PackageManager.PERMISSION_GRANTED) {
-                            grantedPermissions.add(permission);
-                        } else {
-                            deniedPermissions.add(permission);
-                        }
-                    }
+                if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                    grantedPermissions.add(permission);
+                } else {
+                    deniedPermissions.add(permission);
+                }
+            }
 
-                    // Success means that all requested permissions were granted.
-                    for (String p : permissions) {
-                        if (!grantedPermissions.contains(p)) {
-                            // According to step 6 of the getUserMedia() algorithm
-                            // "if the result is denied, jump to the step Permission
-                            // Failure."
-                            errorCallback.invoke(deniedPermissions);
-                            return;
-                        }
-                    }
-                    successCallback.invoke(grantedPermissions);
-                };
+            // Success means that all requested permissions were granted.
+            for (String p : permissions) {
+                if (!grantedPermissions.contains(p)) {
+                    // According to step 6 of the getUserMedia() algorithm
+                    // "if the result is denied, jump to the step Permission
+                    // Failure."
+                    errorCallback.invoke(deniedPermissions);
+                    return;
+                }
+            }
+            successCallback.invoke(grantedPermissions);
+        };
 
         final Activity activity = _currentActivity;
         if (activity != null) {
@@ -700,7 +694,8 @@ public class CallKeepModule {
         @Override
         public void onReceive(Context context, Intent intent) {
             ConstraintsMap args = new ConstraintsMap();
-            HashMap<String, String> attributeMap = (HashMap<String, String>)intent.getSerializableExtra("attributeMap");
+            HashMap<String, String> attributeMap = (HashMap<String, String>) intent
+                    .getSerializableExtra("attributeMap");
 
             switch (intent.getAction()) {
                 case ACTION_DISPLAY_INCOMING:
@@ -762,7 +757,10 @@ public class CallKeepModule {
                     headlessIntent.putExtra("callUUID", attributeMap.get(EXTRA_CALL_UUID));
                     headlessIntent.putExtra("name", attributeMap.get(EXTRA_CALLER_NAME));
                     headlessIntent.putExtra("handle", attributeMap.get(EXTRA_CALL_NUMBER));
-                    Log.d(TAG, "wakeUpApplication: " + attributeMap.get(EXTRA_CALL_UUID) + ", number : " + attributeMap.get(EXTRA_CALL_NUMBER) + ", displayName:" + attributeMap.get(EXTRA_CALLER_NAME));
+                    Log.d(TAG,
+                            "wakeUpApplication: " + attributeMap.get(EXTRA_CALL_UUID) + ", number : "
+                                    + attributeMap.get(EXTRA_CALL_NUMBER) + ", displayName:"
+                                    + attributeMap.get(EXTRA_CALLER_NAME));
 
                     ComponentName name = _context.startService(headlessIntent);
                     if (name != null) {

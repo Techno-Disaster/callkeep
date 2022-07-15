@@ -37,6 +37,7 @@ import android.telecom.ConnectionService;
 import android.telecom.DisconnectCause;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
+import android.telecom.VideoProfile;
 import android.telecom.TelecomManager;
 import android.util.Log;
 
@@ -129,7 +130,11 @@ public class VoiceConnectionService extends ConnectionService {
         Bundle extra = request.getExtras();
         Uri number = request.getAddress();
         String name = extra.getString(EXTRA_CALLER_NAME);
+        Boolean hasVideo = extra.getBoolean(EXTRA_HAS_VIDEO, false);
         Connection incomingCallConnection = createConnection(request);
+         if (hasVideo) {
+            setVideoCallSupport(this.getApplicationContext(), incomingCallConnection);
+        }
         incomingCallConnection.setRinging();
         incomingCallConnection.setInitialized();
 
@@ -315,7 +320,6 @@ public class VoiceConnectionService extends ConnectionService {
         HashMap<String, String> extrasMap = this.bundleToMap(extras);
         extrasMap.put(EXTRA_CALL_NUMBER, request.getAddress().toString());
         VoiceConnection connection = new VoiceConnection(this, extrasMap);
-        connection.setConnectionCapabilities(Connection.CAPABILITY_MUTE | Connection.CAPABILITY_SUPPORT_HOLD);
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Context context = getApplicationContext();
@@ -332,6 +336,14 @@ public class VoiceConnectionService extends ConnectionService {
             }
         }
 
+        int capabilities = connection.getConnectionCapabilities();
+        capabilities |= Connection.CAPABILITY_SUPPORTS_VT_LOCAL_BIDIRECTIONAL;
+        capabilities |= Connection.CAPABILITY_SUPPORTS_VT_REMOTE_BIDIRECTIONAL;
+        capabilities |= Connection.CAPABILITY_CAN_UPGRADE_TO_VIDEO;
+        capabilities |= Connection.CAPABILITY_MUTE;
+        capabilities |= Connection.CAPABILITY_SUPPORT_HOLD;
+        capabilities |= Connection.CAPABILITY_HOLD;
+        connection.setConnectionCapabilities(capabilities);
         connection.setInitializing();
         connection.setExtras(extras);
         currentConnections.put(extras.getString(EXTRA_CALL_UUID), connection);
@@ -386,6 +398,13 @@ public class VoiceConnectionService extends ConnectionService {
         });
     }
 
+     private void setVideoCallSupport(Context context, Connection connection) {
+        VideoConnectionProvider VideoCallProvider = new VideoConnectionProvider(context, connection);
+
+        connection.setVideoState(VideoProfile.STATE_BIDIRECTIONAL);
+        connection.setVideoProvider(VideoCallProvider);
+    }
+    
     private HashMap<String, String> bundleToMap(Bundle extras) {
         HashMap<String, String> extrasMap = new HashMap<>();
         Set<String> keySet = extras.keySet();
